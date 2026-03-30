@@ -1,0 +1,260 @@
+openapi: 3.0.3
+info:
+  title: Event Booking API
+  version: 1.0.0
+  description: Minimal OpenAPI documentation for the event booking backend.
+servers:
+  - url: /api/v1
+tags:
+  - name: Events
+  - name: Bookings
+  - name: Attendance
+paths:
+  /events:
+    post:
+      tags:
+        - Events
+      summary: Create a new event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEventRequest'
+      responses:
+        '201':
+          description: Event created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Event Created successfully
+                  event:
+                    $ref: '#/components/schemas/Event'
+        '400':
+          description: Invalid request body
+        '404':
+          description: Resource not found
+        '500':
+          description: Internal server error
+    get:
+      tags:
+        - Events
+      summary: List upcoming events
+      responses:
+        '200':
+          description: Upcoming events fetched successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+        '400':
+          description: Invalid request
+        '404':
+          description: Resource not found
+        '500':
+          description: Internal server error
+  /bookings:
+    post:
+      tags:
+        - Bookings
+      summary: Create a booking for an event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Booking successful
+                  booking:
+                    $ref: '#/components/schemas/Booking'
+        '400':
+          description: Validation error or no tickets available
+        '500':
+          description: Internal server error
+  /users/{id}/bookings:
+    get:
+      tags:
+        - Bookings
+      summary: Get all bookings for a user with event details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: User ID
+      responses:
+        '200':
+          description: User bookings fetched successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookingWithEvent'
+        '400':
+          description: Invalid user ID
+        '500':
+          description: Internal server error
+  /events/{id}/attendance:
+    post:
+      tags:
+        - Attendance
+      summary: Mark attendance using a booking code
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Event ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkAttendanceRequest'
+      responses:
+        '201':
+          description: Attendance marked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Attendance marked
+                  attendance:
+                    $ref: '#/components/schemas/Attendance'
+        '400':
+          description: Invalid input, attendance already marked, or booking does not belong to this event
+        '404':
+          description: Booking code not found
+        '500':
+          description: Internal server error
+components:
+  schemas:
+    Event:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Tech Conference 2026
+        description:
+          type: string
+          nullable: true
+          example: Annual developer conference
+        event_date:
+          type: string
+          format: date-time
+          example: 2026-05-01T10:00:00.000Z
+        total_capacity:
+          type: integer
+          example: 300
+        remaining_tickets:
+          type: integer
+          example: 298
+        created_at:
+          type: string
+          format: date-time
+          example: 2026-03-30T08:00:00.000Z
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        userId:
+          type: integer
+          example: 2
+        eventId:
+          type: integer
+          example: 1
+        booking_date:
+          type: string
+          format: date-time
+          example: 2026-03-30T08:30:00.000Z
+        booking_code:
+          type: string
+          example: Book-1711787400000
+    BookingWithEvent:
+      allOf:
+        - $ref: '#/components/schemas/Booking'
+        - type: object
+          properties:
+            event:
+              $ref: '#/components/schemas/Event'
+    Attendance:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        bookingId:
+          type: integer
+          example: 10
+        entry_time:
+          type: string
+          format: date-time
+          example: 2026-03-30T09:00:00.000Z
+    CreateEventRequest:
+      type: object
+      required:
+        - title
+        - event_date
+        - total_capacity
+      properties:
+        title:
+          type: string
+          example: Tech Conference 2026
+        description:
+          type: string
+          example: Annual developer conference
+        event_date:
+          type: string
+          format: date-time
+          example: 2026-05-01T10:00:00.000Z
+        total_capacity:
+          type: integer
+          minimum: 1
+          example: 300
+    CreateBookingRequest:
+      type: object
+      required:
+        - userId
+        - eventId
+      properties:
+        userId:
+          type: integer
+          example: 2
+        eventId:
+          type: integer
+          example: 1
+    MarkAttendanceRequest:
+      type: object
+      required:
+        - booking_code
+      properties:
+        booking_code:
+          type: string
+          example: Book-1711787400000

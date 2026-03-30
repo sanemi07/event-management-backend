@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  created_at DateTime @default(now())
+
+  bookings Booking[]
+}
+
+model Event {
+  id                Int      @id @default(autoincrement())
+  title             String
+  description       String?
+  event_date        DateTime
+  total_capacity    Int
+  remaining_tickets Int
+  created_at        DateTime @default(now())
+
+  bookings Booking[]
+}
+
+model Booking {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  eventId      Int
+  booking_date DateTime @default(now())
+  booking_code String   @unique
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  attendance Attendance[]
+}
+
+model Attendance {
+  id         Int      @id @default(autoincrement())
+  bookingId  Int
+  entry_time DateTime @default(now())
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+}
